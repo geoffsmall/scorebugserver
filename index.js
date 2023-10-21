@@ -5,12 +5,40 @@ const fs = require('fs');
 const http = require('http');
 const server = http.createServer(app);
 
+let players = [];
+let teams = [];
+
+app.use(function(req,res,next){
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200');
+
+    next();
+});
+
 //const { Server } = require("socket.io");
 const io = require("socket.io")(server, {
     cors: {
         origins: ['http://localhost:4200']
     }
 });
+
+const MongoClient = require("./conn");
+let mongoClient;
+MongoClient.connect().then(({client,db})=>{
+    mongoClient = client;
+
+    getTeamAndPlayerData();
+});
+
+async function getTeamAndPlayerData(){
+    const db = mongoClient.db("scorebug");
+        
+    const pCollection = await db.collection("players");
+    players = await pCollection.find({}).toArray() || [];
+
+    const tCollection = await db.collection("teams");
+    teams = await tCollection.find({}).toArray() || [];
+}
 
 const extras = [
     "Power Play",
@@ -28,6 +56,8 @@ const extras = [
 let gameData;
 let prevGameData;
 
+
+
 fs.readFile('./config.json', 'utf8', (error, data) => {
     try{
         if(error) throw error;
@@ -43,6 +73,34 @@ fs.readFile('./config.json', 'utf8', (error, data) => {
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/getPlayers', async (req, res) => {
+    try{
+        const db = mongoClient.db("scorebug");
+        
+        const collection = await db.collection("players");
+        const results = await collection.find({}).toArray() || [];
+
+        res.send(results).status(200);
+    }catch(err){
+        console.error(err);       
+        res.send(results).status(400);
+    }
+});
+
+app.get('/getTeams', async (req, res) => {
+    try{
+        const db = mongoClient.db("scorebug");
+        
+        const collection = await db.collection("teams");
+        const results = await collection.find({}).toArray() || [];
+
+        res.send(results).status(200);
+    }catch(err){
+        console.error(err);       
+        res.send(results).status(400);
+    }
 });
 
 io.on('connection', socket => {
@@ -100,7 +158,10 @@ io.on('connection', socket => {
 
     socket.on("adminUpdate", (updatedData) => {
 
+        console.log("adminUpdate");
+
         gameData = parseUpdate(updatedData);
+
         io.to("client").emit("clientUpdate", gameData);
     });
 
@@ -120,9 +181,42 @@ io.on('connection', socket => {
 
 function parseUpdate(updatedData){
     
-    const {homeTeam="T1", homeScore=0, homeShots=0, homeExtra="", guestTeam="T2", guestScore=0, guestShots=0, guestExtra="", homeColour, guestColour, period, time} = updatedData;
+    const {gameTitle="", homeTeam="T1", homeScore=0, homeShots=0, homeExtra="", guestTeam="T2", guestScore=0, guestShots=0, guestExtra="", homeColour, guestColour, period, time, 
+    guestTeamAbvCustom,
+    guestTeamNameCustom,
+    guestTeamCityCustom,
+    homeTeamAbvCustom,
+    homeTeamNameCustom,
+    homeTeamCityCustom
+    } = updatedData;
 
-    let newGameData = {homeTeam, homeScore, homeShots, homeExtra, guestTeam, guestScore, guestShots, guestExtra, homeColour, guestColour, period, time};
+    let newGameData = {gameTitle, homeTeam, homeScore, homeShots, homeExtra, guestTeam, guestScore, guestShots, guestExtra, homeColour, guestColour, period, time, guestTeamNameCustom, guestTeamCityCustom, homeTeamNameCustom, homeTeamCityCustom};
+
+    if(homeTeam === "Custom"){
+        newGameData.homeTeam = homeTeamAbvCustom || "N/A";
+    }else{
+        if(!homeTeam) newGameData.homeTeam = "N/A";
+
+        let selTeam = teams.find((team)=>{
+            return team.teamname === homeTeam;
+        });
+        if(selTeam){
+            newGameData.homeTeam = selTeam.teamname;
+        }
+    }
+
+    if(guestTeam === "Custom"){
+        newGameData.guestTeam = guestTeamAbvCustom || "N/A";
+    }else{
+        if(!guestTeam) newGameData.guestTeam = "N/A";
+
+        let selTeam = teams.find((team)=>{
+            return team.teamname === guestTeam;
+        });
+        if(selTeam){
+            newGameData.guestTeam = selTeam.teamname;
+        }
+    }
 
     return newGameData;
 }
@@ -165,6 +259,7 @@ function getGameData(){
         return gameData;
     } else{
         return {
+            gameTitle:"",
             period:"1",
             time:"0",
             homeTeam: "T1",
