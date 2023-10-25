@@ -25,7 +25,7 @@ let client;
 async function connect() {
     if (!client) {
         client = await mongoClient.connect()
-        .catch(err => { console.log(err); });
+        .catch(err => { console.error(err); });
 
         //client.on('commandStarted', started => console.log(started));
 

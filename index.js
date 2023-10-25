@@ -187,10 +187,45 @@ function parseUpdate(updatedData){
     guestTeamCityCustom,
     homeTeamAbvCustom,
     homeTeamNameCustom,
-    homeTeamCityCustom
+    homeTeamCityCustom,
+    fline1player1,
+    fline1player2,
+    fline1player3,
+    fline2player1,
+    fline2player2,
+    fline2player3,
+    fline3player1,
+    fline3player2,
+    fline3player3,
+    dline1player1,
+    dline1player2,
+    dline2player1,
+    dline2player2,
+    dline3player1,
+    dline3player2,
+    // Player of the Game
+    potgGameInfo,
+    potgPlayer
     } = updatedData;
 
-    let newGameData = {gameTitle, homeTeam, homeScore, homeShots, homeExtra, guestTeam, guestScore, guestShots, guestExtra, homeColour, guestColour, period, time, guestTeamNameCustom, guestTeamCityCustom, homeTeamNameCustom, homeTeamCityCustom};
+    let newGameData = {gameTitle, homeTeam, homeScore, homeShots, homeExtra, guestTeam, guestScore, guestShots, guestExtra, homeColour, guestColour, period, time, guestTeamNameCustom, guestTeamCityCustom, homeTeamNameCustom, homeTeamCityCustom,fline1player1,
+        fline1player2,
+        fline1player3,
+        fline2player1,
+        fline2player2,
+        fline2player3,
+        fline3player1,
+        fline3player2,
+        fline3player3,
+        dline1player1,
+        dline1player2,
+        dline2player1,
+        dline2player2,
+        dline3player1,
+        dline3player2,
+        // Player of the Game
+        potgGameInfo,
+        potgPlayer};
 
     if(homeTeam === "Custom"){
         newGameData.homeTeam = homeTeamAbvCustom || "N/A";
